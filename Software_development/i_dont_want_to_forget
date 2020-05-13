@@ -2,4 +2,6 @@
 Problem is just need the liitle string tactics to know the power of recursion is sufficient ..
 donot go to dp now but problem can be solved using dp as problem has lot of subproblems there.
 
-2)Problem Name:yet to come
+2)Problem Name:Multiply two strings which contains integers but long numbers
+so using string can be a good idea so building simple algorithm the naive multiplication we have to take care of the carry 
+which is very important in this problem.
