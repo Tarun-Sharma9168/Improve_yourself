@@ -220,8 +220,159 @@ df.drop('Row ID', axis=1, inplace = True)
 df_subset = df.loc[[i for i in range(100)], ["X", "Y", "Z"]]
 
 
+#Finding the statisitics on the subset only that is
+
+df_subset.describe()
 
 
+
+#Using the unique functions 
+unique_values = df['X'].unique()
+number_unique_values=df['Y'].nunique()
+
+#Using the Group by method and remember there is no existence of groupby function without the aggregation method
+
+
+#Pyspark important 
+from Pyspark.sql import SparkSession
+
+spark=SparkSession.builder.appName('binary_class').getOrCreate()
+
+
+
+#reading the dataset into the spark cluster inferSchema is really very necessary as it is important in Pyspark along with the header using the 
+#spark function that is spark.read.csv just like the pandas we use generally
+df=spark.read.csv('/FileStore/tables/classification_data.csv',inferSchema=True,header=True)
+
+
+#best way to do the visualization you can use certain palettes
+sns.pairplot(data=df,hue="Species",palette="Set2")
+plt.show()
+
+
+
+#getting the datavalues for certain rows using the label and of all the rows
+features = df.loc[:,["SepalLengthCm","SepalWidthCm","PetalLengthCm","PetalWidthCm"]]
+ 
+ 
+# Finding the best  number of clusters for kmeans 
+
+from sklearn.cluster import KMeans
+wcss = []
+
+for k in range(1,15):
+    kmeans = KMeans(n_clusters=k)
+    kmeans.fit(features)
+    wcss.append(kmeans.inertia_)
+
+
+plt.figure(figsize=(20,8))
+plt.title("WCSS / K Chart", fontsize=18)
+plt.plot(range(1,15),wcss,"-o")
+plt.grid(True)
+plt.xlabel("Amount of Clusters",fontsize=14)
+plt.ylabel("Inertia",fontsize=14)
+plt.xticks(range(1,20))
+plt.tight_layout()
+plt.show()
+
+
+#Taking the logarithm if you want
+df['Log-area']=np.log10(df['area']+1)
+
+
+#Scatter plot using the dataset directly remember the paramters you can use
+#visualizing the grid can be a good parameter as it enhances the visualization
+for i in df.describe().columns[:-2]:
+    df.plot.scatter(i,'Log-area',grid=True)
+
+
+#Also the boxplot if you want  
+df.boxplot(column='Log-area',by='day')
+df.boxplot(column='Log-area',by='month')
+
+#There are different modes of preprocessing that we needs to do 
+#Remember converting the machine learning categorical variables into the machine learning 
+from sklearn.preprocessing import LabelEncoder,MinMaxScaler,OneHotEncoder
+from sklearn.metrics import accuracy_score,roc_auc_score,confusion_matrix
+from sklearn.model_selection import train_test_split,cross_val_score,GridSearchCV,ShuffleSplit,KFold
+
+#Label Encoding any values 
+#Simple method that is fit with the categorical variables
+enc = LabelEncoder()
+enc.fit(df['month'])
+
+
+df['month_encoded']=enc.transform(df['month'])
+df.head()
+#TRanformation is necessary after fitting the data
+
+
+#Dropping the data if needed and after that train test split into certainratio
+X_data=df.drop(['area','Log-area','month','day'],axis=1)
+y_data=df['Log-area']
+
+X_train, X_test, y_train, y_test = train_test_split(X_data, y_data, test_size=0.2)
+
+
+#Some important models along with the other things which is necessary along with the models 
+from sklearn.svm import SVR
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GridSearchCV
+scaler = StandardScaler()
+
+#defining of the Parameter
+# Parameter grid for the Grid Search
+param_grid = {'C': [0.01,0.1,1, 10], 'epsilon': [10,1,0.1,0.01,0.001,0.0001], 'kernel': ['rbf']}
+
+#there are two paramters involved in the svm where one is to maximize the margin of the hyperplane and 
+#other penalizes the data points if wronlgy classifies and affect the hyperplane buuilding 
+
+grid_SVR = GridSearchCV(SVR(),param_grid,refit=True,verbose=0,cv=5)
+grid_SVR.fit(scaler.fit_transform(X_train),scaler.fit_transform(y_train))
+
+
+#getting the best paramters 
+print("Best parameters obtained by Grid Search:",grid_SVR.best_params_)
+
+#Prediction is also very important 
+a=grid_SVR.predict(X_test)
+print("RMSE for Support Vector Regression:",np.sqrt(np.mean((y_test-a)**2)))
+
+#importing the RandomForestRegressor here
+from sklearn.ensemble import RandomForestRegressor
+
+param_grid = {'max_depth': [5,10,15,20,50], 'max_leaf_nodes': [2,5,10], 'min_samples_leaf': [2,5,10],
+             'min_samples_split':[2,5,10]}
+grid_RF = GridSearchCV(RandomForestRegressor(),param_grid,refit=True,verbose=0,cv=5)
+grid_RF.fit(X_train,y_train)
+
+
+#Sometimes simple network is also important with keras model
+
+from keras.models import Sequential
+import keras.optimizers as opti
+from keras.layers import Dense,Activation,MaxPool1D,Dropout
+from keras.layers import Conv1D,Conv2D,LSTM,GRU,Embedding
+
+
+
+#Building a simple sequential model 
+#it is very important to understand that it is not much difficult 
+model=Sequential()
+model.add(Dense(100,input_dim=12))
+model.add(Activation('relu'))
+model.add(Dropout(0.2))
+model.add(Dense(120))
+model.add(Activation('relu'))
+model.add(Dropout(0.3))
+model.add(Dense(50))
+model.add(Activation('relu'))
+model.add(Dense(1))
+model.summary()
+
+
+#Neural Network much more than the skeleton of layers some other things are also important 
 
 
 
