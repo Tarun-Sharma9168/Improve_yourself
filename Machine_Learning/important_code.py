@@ -546,5 +546,174 @@ for i in range(len(l)-1):
 
 
 #Scaling the features which is necessary using the sklearn.preprocessing library 
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+#transform the data is also that is fit and the transform the data 
+scaler.fit(df.drop('TARGET CLASS',axis=1))
+scaled_features = scaler.transform(df.drop('TARGET CLASS',axis=1))
+
+
+#getting the training data except the label value 
+df_feat = pd.DataFrame(scaled_features,columns=df.columns[:-1])
+df_feat.head()
+
+
+
+
+#fitting the Kneighbbors CLassifier model which has the important parameter that is n_neighbors
+from sklearn.neighbors import KNeighborsClassifier
+knn = KNeighborsClassifier(n_neighbors=1)
+knn.fit(X_train,y_train)
+
+
+#Finding the misclassification error
+#finding the misclassification error rate
+print("Misclassification error rate:",round(np.mean(pred!=y_test),3))
+
+
+
+
+
+#Finding the K using the Elbow method where the plot is between thw miclassification rate and the 
+#value of k
+error_rate = []
+# Will take some time
+for i in range(1,60): 
+    knn = KNeighborsClassifier(n_neighbors=i)
+    knn.fit(X_train,y_train)
+    pred_i = knn.predict(X_test)
+    error_rate.append(np.mean(pred_i != y_test))
+    
+    
+    
+#plot this value and you get the easy idea what you gonna do to the value of  K
+#We are going to draw a very nice plot in which we are using different colours ,different types of lines
+#title and the variety in the fontsize and all the other facilities that are there 
+#And also generating the k value using the range function
+plt.figure(figsize=(10,6))
+plt.plot(range(1,60),error_rate,color='blue', linestyle='dashed', marker='o',
+         markerfacecolor='red', markersize=8)
+plt.title('Error Rate vs. K Value', fontsize=20)
+plt.xlabel('K',fontsize=15)
+plt.ylabel('Error (misclassification) Rate',fontsize=15)    
+
+    
+
+#Sometimes splitting the data is needed in machine learning and that is using the simple split functions
+
+names = names.split(sep=' ')
+names    
+
+
+#there are facilities when you are importing the data that is you can replace the null values and the 
+#including the index cols or not or the names of the columns or not 
+
+df = pd.read_csv('../Datasets/hypothyroid.csv',index_col=False,names=names,na_values=['?'])
+
+
+#checking if there is a null in each column and if it is there how much is there
+#very simple and intuitive
+df.isnull().sum()
+
+
+
+# Simple tranformation functions apply to rows these transformation can be anything and you can apply 
+# using the apply method
+
+def class_convert(response):
+    if response=='hypothyroid':
+        return 1
+    else:
+        return 0
+    
+    
+#applying a particular function to a column usng the apply function
+#apply takes the name of theb function that you want to apply on that particular row 
+df['response']=df['response'].apply(class_convert)    
+
+
+
+#Setting the pairplot with lot of differnt functionalities that are there
+#plotting the pairplot using the seaborn
+#in this you have to give the dataset only or column names if you want to build on some attributes only
+#diag_kws and the plot_kws are the two differnt parts that you can separately define according to your own will
+#how you want to see the plot 
+sns.pairplot(data=df[df.columns[1:]],diag_kws={'edgecolor':'k','bins':25},plot_kws={'edgecolor':'k'})
+plt.show()
+
+
+
+#getting the sample out of the data same as like head but i think sample is random in the python 
+#But i am not sure
+#not only heads but the sample function also used to get the sample from the dataframe
+df_dummies.sample(10)
+
+
+
+#using The Logistics regression which uses the sigmoid function to map the values between 0 and 1 and inputs from the regression line
+#map into the S Shaped Curve
+from sklearn.linear_model import LogisticRegression
+#Remember to mention the penalty and also the solver you want to use in solving the LogisticRegression 
+#the parameters you can choose that is penalty and the solver for the parameters i think 
+clf1 = LogisticRegression(penalty='l2',solver='newton-cg')
+clf1.fit(X_train,y_train)
+#you can map the probabilities value that are coming using the predict_proba method 
+#it is very important to see this raw matching of the output
+#It is nice as it is called by the classifier and it predicts the prob value
+#taking the prob_threshold that is generally use in the logit function
+prob_threshold = 0.5
+prob_df=pd.DataFrame(clf1.predict_proba(X_test[:10]),columns=['Prob of NO','Prob of YES'])
+#It is little bit tricky but nothing more difficult 
+prob_df['Decision']=(prob_df['Prob of YES']>prob_threshold).apply(int)
+prob_df 
+
+
+#Creating the generalized linear model which has some requirementts including the formula which 
+#Symbolises on how many variables the target value is dependent
+import statsmodel.formula.api as smf
+import statsmodels.api as sm
+formula = 'response ~ ' + '+'.join(df_dummies.columns[1:])
+formula
+model = smf.glm(formula = formula, data=df_dummies, family=sm.families.Binomial())
+
+
+
+#CountPlot using the Sns Style that is in the modern way
+sns.set_style('whitegrid')
+sns.countplot(x='Survived',data=train,palette='RdBu_r')
+
+#using hue if you want to groupby plots on certain attribute her attribute is the sex
+sns.set_style('whitegrid')
+sns.countplot(x='Survived',hue='Sex',data=train,palette='RdBu_r')
+
+
+
+#Building a good quality histogram is necesary by using some of the important variables 
+plt.xlabel("Age of the passengers",fontsize=18)
+plt.ylabel("Count",fontsize=18)
+plt.title("Age histogram of the passengers",fontsize=22)
+train['Age'].hist(bins=30,color='darkred',alpha=0.7,figsize=(10,6))
+
+
+#Now the Boxplot in the Sns Style  
+#Choose differnt pallete values 
+plt.figure(figsize=(12, 10))
+plt.xlabel("Passenger Class",fontsize=18)
+plt.ylabel("Age",fontsize=18)
+sns.boxplot(x='Pclass',y='Age',data=train,palette='winter')
+
+
+
+#Convert the features into the numerical values using the get_dummies
+sex = pd.get_dummies(train['Sex'],drop_first=True)
+embark = pd.get_dummies(train['Embarked'],drop_first=True)
+
+
+
+#sometimes the concatenation is needed which is there with pandas 
+train.drop(['Sex','Embarked'],axis=1,inplace=True)
+train = pd.concat([train,sex,embark],axis=1)
+train.head()
+
 
 
