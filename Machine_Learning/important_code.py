@@ -373,6 +373,178 @@ model.summary()
 
 
 #Neural Network much more than the skeleton of layers some other things are also important 
+learning_rate=0.001
+optimizer = opti.RMSprop(lr=learning_rate)
+model.compile(optimizer=optimizer,loss='mse')
 
+
+#fitting the model to the data
+data=X_train
+target = y_train
+model.fit(data, target, epochs=100, batch_size=10,verbose=0)
+
+#Building the REC Curve for the neural network 
+rec_NN=[]
+for i in range(tol_max):
+    rec_NN.append(rec(a,y_test,i))
+
+plt.figure(figsize=(5,5))
+plt.title("REC curve for the Deep Network\n",fontsize=15)
+plt.xlabel("Absolute error (tolerance) in prediction ($ha$)")
+plt.ylabel("Percentage of correct prediction")
+plt.xticks([i for i in range(0,tol_max+1,5)])
+plt.ylim(-10,100)
+plt.yticks([i*20 for i in range(6)])
+plt.grid(True)
+plt.plot(range(tol_max),rec_NN)
+
+
+#i dont know but we use this generally to make the graph,plots within the notebooks itself 
+#or making the matplotlib inline 
+#%matplotlib inline sets the backend of matplotlib to the 'inline' backend: 
+#With this backend, the output of plotting commands is displayed inline within 
+#frontends like the Jupyter notebook, directly below the code cell that produced it
+#The resulting plots will then also be stored in the notebook document
+
+
+
+
+#checking the shape
+df.shape
+df.info()
+
+
+#If you want the value count of your values you can do this using the function value_counts()
+# which is very important 
+
+#we are counting the credit policy status like how many loans have approved and how many are not 
+#using the function value_counts()
+print("Follwoing is a breakup of credit approval status. 1 means approved credit, 0 means not approved.")
+print(df['credit.policy'].value_counts())
+
+
+
+#EXploratory Data Analyis
+# you are simply taking the people credit score and want to make a comparison
+# it is very important histogram code which does not 
+#Building the histogram 
+df[df['credit.policy']==1]['fico'].plot.hist(bins=30,alpha=0.5,color='blue', label='Credit.Policy=1')
+
+df[df['credit.policy']==0]['fico'].plot.hist(bins=30,alpha=0.5, color='red', label='Credit.Policy=0')
+
+plt.legend(fontsize=15)
+
+plt.title ("Histogram of FICO score by approved or disapproved credit policies", fontsize=16)
+
+plt.xlabel("FICO score", fontsize=14)
+
+
+import seaborn as sns
+#Using the Seaborn Boxplot Feature simple and effective and easy to use
+#plotting the boxplot using the credit 
+#it is even given that the risky people got the higher interest from the bank which is usual because bank doesnot 
+#believe in those people
+#the plot not only includes the Plot Also the lables including the X label ,Ylable ,legend the size 
+#And the main thing is the Title of the plot
+sns.boxplot(x=df['credit.policy'],y=df['int.rate'])
+
+plt.title("Interest rate varies between risky and non-risky borrowers", fontsize=15)
+
+plt.xlabel("Credit policy",fontsize=15)
+
+plt.ylabel("Interest rate",fontsize=15)
+
+
+
+
+#it is very important plot where the reason of the loan is shown in which another attribute not fully paid attribute is
+#act as a hue
+#As Count Plot is very important measure which deals with the count values so 
+#Sns that is seaborn gives you very nice code and the view after that
+plt.figure(figsize=(10,6))
+
+sns.countplot(x='purpose',hue='not.fully.paid',data=df, palette='Set1')
+
+plt.title("Bar chart of loan purpose colored by not fully paid status", fontsize=17)
+
+plt.xlabel("Purpose", fontsize=15)
+
+
+
+
+#We are trying to find a trend between the fico score and the interest rate that is 
+#why it is called the joint plot because it is the combination of the distribution and the scatterplot
+#There are some nice plot that is very attractive and the hybrid plots containing more than one plot
+#In a single plot and joint plot from the sns gives the field of that 
+
+sns.jointplot(x='fico',y='int.rate',data=df, color='purple', size=12)
+
+
+
+#Another one is coming which is lmplot which fits the regression line between the attributes as well
+#as draw the scatter plot between the two it is computationally more intensive than the regplot which 
+#only fits the simple linear regression line and it is computationally less expensive and on the other
+#hand the lmplot is using the regplot as well as the facetgrid plt.figure(figsize=(14,7))
+
+sns.lmplot(y='int.rate',x='fico',data=df,hue='credit.policy',
+           col='not.fully.paid',palette='Set1',size=6)
+
+
+
+#We have to convert the categorical variables using the get dummies by dropping the first_one 
+#it is the best way to do this
+df_final = pd.get_dummies(df,['purpose'],drop_first=True)
+
+
+
+#Training a decision tree classifier using the criterion as a ginny and the max_depth parameter as None
+
+#we use the gini as the criterion
+dtree = DecisionTreeClassifier(criterion='gini',max_depth=None)
+
+
+
+
+#Describing the result is very important is very important so 
+#classification report is very well known way to represent the result 
+#Classification report and the confusion can be a measure but it is good to start with accuracy as measure otherwise not
+from sklearn.metrics import classification_report,confusion_matrix
+
+
+#again the same way that is y_test,y_pred pair is used 
+print(classification_report(y_test,predictions))
+
+
+#Similarly printing the Confusion matrix is also really important 
+cm = confusin_matrix(y_test,y_pred)
+print(cm)
+print ("Accuracy of prediction:",round((cm[0,0]+cm[1,1])/cm.sum(),3))
+
+
+#Training the Random Forest Classifier is an art and you should know that because 
+#these ensemble classifiers are also very important Remember their parameters is also very important 
+from sklearn.ensemble import RandomForestlassifier
+
+#you took 600 as the number of estimators is nothing but the numberof trees
+rfc = RandomForestClassifier(n_estimators=600)
+
+#Simply fitting the the value using the Training Data
+rfc.fit(X_train, y_train)
+
+#getting the columns of the dataset 
+df.columns
+
+#Making the boxplot for all the variables
+#this time not the commmon one but we are using the sns boxplot which is really very important
+
+#Most easy way to plot the data .You can mention just the attribute name if you are giving the data
+for i in range(len(l)-1):
+    sns.boxplot(x='TARGET CLASS',y=l[i], data=df)
+    plt.figure()
+    
+    
+
+
+#Scaling the features which is necessary using the sklearn.preprocessing library 
 
 
