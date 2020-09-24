@@ -1,0 +1,18 @@
+--------------------------------
+Small learning rate often leads to a overfitting so there is policy called a cyclic learning rate and
+we can use that policy where learning rate vary in between the range .
+
+
+
+---------------------------------
+min learning rate can be one tenth of the maximum it is like rule of thumb
+
+
+
+
+----------------------------------
+small batch sizes added the regularization where as larger batch sizes are not so keep in mind this 
+thing and also batch size can be maximum of your computer memory so remember while assigning a batch size
+
+
+
