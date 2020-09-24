@@ -15,4 +15,76 @@ small batch sizes added the regularization where as larger batch sizes are not s
 thing and also batch size can be maximum of your computer memory so remember while assigning a batch size
 
 
+-----------------------------------
+It is often better to use a larger batch size so a larger learning rate can be used.
+
+
+
+-----------------------------------
+Like learning rates, it is valuable to set momentum as large as possible without causing instabilities during training.
+
+
+
+-----------------------------------
+Weight decay is one form of regularization and it plays an important role in training so its value needs to be set properly [7]. Weight decay is defined as multiplying each 
+weight in the gradient descent at each epoch by a factor λ [0<λ<1].
+
+
+
+------------------------------------
+
+Small batch sizes add regularization while large batch sizes add
+less, so utilize this while balancing the proper amount of regularization.
+
+-------------------------------------
+It is often better to use a larger batch size so a larger learning rate can be used.
+
+
+
+
+---------------------------------------
+Dimensionality Reduction techniques:
+PCA
+Tsne
+Lda
+Neural Autoencoder
+
+
+
+
+
+
+------------------------------------------
+Word2vec
+Glove
+Bagofwords
+Tfidf-weight more the words which are infrequent rather than weighing the word which is occuring commonly 
+but irrelevant 
+
+
+-------------------------------------------
+Word Embeddings: Distributional vectors, also called word embeddings, are based on the so-called distributional hypothesis — words appearing within similar context possess similar meaning. Word embeddings are pre-trained on a task where the objective is to predict a 
+word based on its context, typically using a shallow neural 
+network. The figure below illustrates a neural language model proposed by Bengio and colleagues.
+
+
+
+
+
+--------------------------------------------
+CBOW is a neural approach to construct word embeddings and the objective is to compute the conditional probability of a target word given the context words in a given window size. On the other hand, Skip-gram is a neural approach to construct word embeddings, where the goal is to predict the surrounding context words (i.e., conditional probability) given a central target word. For
+both models, the word embedding dimension is determined by 
+computing (in an unsupervised manner) the accuracy of the prediction.
+
+
+
+
+---------------------------------------------
+The Problem of Polysemy is important which means having the 
+same words but different meanings it is usual in old shallow neural
+network embeddings that are there with us.
+
+
+
+
 
