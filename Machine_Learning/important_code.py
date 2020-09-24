@@ -715,5 +715,230 @@ train.drop(['Sex','Embarked'],axis=1,inplace=True)
 train = pd.concat([train,sex,embark],axis=1)
 train.head()
 
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+
+model=keras.Sequential(layers.Dense(2,activation='relu',name='layer1'),
+                       layers.Dense(3,activation='relu',name='layer2'),
+                       layers.Dense(4,name='layers3'))
+
+# As the dimension is 2d so the input that is required is 2d
+# Call model on a test input
+x = tf.ones((3, 3))
+#the input is x here
+y = model(x)
 
 
+#we can create layer by layer
+# Create 3 layers
+layer1 = layers.Dense(2, activation="relu", name="layer1")
+layer2 = layers.Dense(3, activation="relu", name="layer2")
+layer3 = layers.Dense(4, name="layer3")
+
+# Call layers on a test input
+x = tf.ones((3, 3))
+y = layer3(layer2(layer1(x)))
+
+'''
+A Sequential model is not appropriate when:
+Your model has multiple inputs or multiple outputs
+Any of your layers has multiple inputs or multiple outputs
+You need to do layer sharing
+You want non-linear topology (e.g. a residual connection, a multi-branch model)
+'''
+
+
+#it is very important 
+#We can pass the list as well of the Dense layer 
+model = keras.Sequential(
+    [
+        layers.Dense(2, activation="relu"),
+        layers.Dense(3, activation="relu"),
+        layers.Dense(4),
+    ]
+)
+
+
+
+#We can access all the layers using the 
+model.layers
+
+
+#We can also create the Sequential model using the add method Model 
+model=keras.Sequential()
+model.add(Dense(2,name='layer1',activation='relu'))
+model.add(Dense(5,activation='relu',name='layer2'))
+model.add(Dense(1,activation='relu',name='layer3'))
+
+
+#there is pop method is also there 
+model.pop()
+print(len(model.layers))
+
+
+#checking the model weights is essential
+model.weights
+
+
+#simple model 
+model=keras.Sequential()
+model.add(keras.Input(shape=(250,250,3)))
+model.add(layers.Conv2D(32, 5, strides=2, activation="relu"))
+model.add(layers.Conv2D(32, 3, activation="relu"))
+model.add(layers.MaxPooling2D(3))
+
+
+#Getting the model summary
+model.summary()
+
+#Again building a sequential model
+model.add(layers.Conv2D(32, 3, activation="relu"))
+model.add(layers.Conv2D(32, 3, activation="relu"))
+model.add(layers.MaxPooling2D(3))
+model.add(layers.Conv2D(32, 3, activation="relu"))
+model.add(layers.Conv2D(32, 3, activation="relu"))
+model.add(layers.MaxPooling2D(2))
+
+#getting the model summary
+model.summary()
+
+# Now that we have 4x4 feature maps, time to apply global max pooling.
+model.add(layers.GlobalMaxPooling2D())
+
+# Finally, we add a classification layer.
+model.add(layers.Dense(10))
+
+
+
+#getting the feature extracted from layers one by one 
+initial_model = keras.Sequential(
+    [
+        keras.Input(shape=(250, 250, 3)),
+        layers.Conv2D(32, 5, strides=2, activation="relu"),
+        layers.Conv2D(32, 3, activation="relu"),
+        layers.Conv2D(32, 3, activation="relu"),
+    ]
+)
+feature_extractor = keras.Model(
+    inputs=initial_model.inputs,
+    outputs=[layer.output for layer in initial_model.layers],
+)
+# Call feature extractor on test input.
+x = tf.ones((1, 250, 250, 3))
+features = feature_extractor(x)
+
+
+#getting features from the particular layer by using the name
+initial_model = keras.Sequential(
+    [
+        keras.Input(shape=(250, 250, 3)),
+        layers.Conv2D(32, 5, strides=2, activation="relu"),
+        layers.Conv2D(32, 3, activation="relu", name="my_intermediate_layer"),
+        layers.Conv2D(32, 3, activation="relu"),
+    ]
+)
+feature_extractor = keras.Model(
+    inputs=initial_model.inputs,
+    outputs=initial_model.get_layer(name="my_intermediate_layer").output,
+)
+# Call feature extractor on test input.
+# the dataset of only one image 
+x = tf.ones((1, 250, 250, 3))
+features = feature_extractor(x)
+
+
+
+#very simple code for transfer learning that is 
+model = keras.Sequential([
+    keras.Input(shape=(784)),
+    layers.Dense(32, activation="relu"),
+    layers.Dense(32, activation="relu"),
+    layers.Dense(32, activation="relu"),
+    layers.Dense(10),
+])
+
+# Presumably you would want to first load pre-trained weights.
+model.load_weights(...)
+
+# Freeze all layers except the last one.
+for layer in model.layers[:-1]:
+  layer.trainable = False
+
+# Recompile and train (this will only update the weights of the last layer).
+model.compile(...)
+model.fit(...)
+
+
+
+#Using another model as well and make use of it
+base_model=keras.applications.Xception(weights='imagenet',include_top=False,pooling='avg')
+base_model.trainable=False
+model=keras.Sequential([
+    base_model,
+    layers.Dense(1000),
+])
+
+
+#Compile and train
+model.compile(...)
+model.fit(...)
+
+
+#Some hints for the Functional APi of the Models using keras
+'''
+The Keras functional API is a way to create models that are more flexible than the tf.keras.Sequential API. 
+The functional API can handle models with non-linear topology, shared layers, and even multiple inputs or outputs.
+The main idea is that a deep learning model is usually a directed acyclic graph (DAG) of layers. So the functional
+API is a way to build graphs of layers.
+'''
+
+
+'''
+The shape of the data is set as a 
+784-dimensional vector. The batch size is always omitted since only the shape of each sample is specified.
+'''
+#If, for example, you have an image input with a shape of (32, 32, 3), you would use:
+img_inputs=keras.Input(shape=(32,32,3))
+
+
+#First the input is created that is remember nn should be a DAG
+inputs=keras.Input(shape=(784,))
+dense = layers.Dense(64, activation="relu")
+x = dense(inputs)
+x = layers.Dense(64, activation="relu")(x)
+outputs = layers.Dense(10)(x)
+model = keras.Model(inputs=inputs, outputs=outputs, name="mnist_model")
+
+
+#it is the general way 
+model.summary()
+
+
+#you can also plot the model as a graph
+#very beautiful architectural plot will be visible
+keras.utils.plot_model(model,"my_first_model.png")
+
+
+#there is a paramter in this function that is show_shapes=True which is really very important 
+keras.utils.plot_model(model, "my_first_model_with_shape_info.png", show_shapes=True)
+
+
+#loading the data for neural network 
+(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+
+x_train = x_train.reshape(60000, 784).astype("float32") / 255
+x_test = x_test.reshape(10000, 784).astype("float32") / 255
+
+#three things while compiling the model that is loss function,optimizer and the metrics 
+model.compile(
+    loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+    optimizer=keras.optimizers.RMSprop(),
+    metrics=["accuracy"],
+)
+
+history = model.fit(x_train, y_train, batch_size=64, epochs=2, validation_split=0.2)
+
+test_scores = model.evaluate(x_test, y_test, verbose=2)
+print("Test loss:", test_scores[0])
+print("Test accuracy:", test_scores[1])
