@@ -88,3 +88,7 @@ network embeddings that are there with us.
 
 
 
+---------------------------------------------
+Conv2dTranspose ,Upsampling used in the encoder decoder architecture
+
+

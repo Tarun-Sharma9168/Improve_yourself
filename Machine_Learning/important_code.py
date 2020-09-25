@@ -937,8 +937,440 @@ model.compile(
     metrics=["accuracy"],
 )
 
+#while fitting the batch_size epochs and validation_split
 history = model.fit(x_train, y_train, batch_size=64, epochs=2, validation_split=0.2)
 
 test_scores = model.evaluate(x_test, y_test, verbose=2)
 print("Test loss:", test_scores[0])
 print("Test accuracy:", test_scores[1])
+
+
+#saving the model
+model.save("path_to_my_model")
+del model
+# Recreate the exact same model purely from the file:
+model = keras.models.load_model("path_to_my_model")
+
+
+#defining the encoder and the decoder
+encoder_input = keras.Input(shape=(28,28,1),name='img')
+x = layers.Conv2D(16, 3, activation="relu")(encoder_input)
+x = layers.Conv2D(32, 3, activation="relu")(x)
+x = layers.MaxPooling2D(3)(x)
+x = layers.Conv2D(32, 3, activation="relu")(x)
+x = layers.Conv2D(16, 3, activation="relu")(x)
+encoder_output = layers.GlobalMaxPooling2D()(x)
+
+encoder = keras.Model(encoder_input, encoder_output, name="encoder")
+encoder.summary()
+
+#Now the decoder module
+x = layers.Reshape((4, 4, 1))(encoder_output)
+x = layers.Conv2DTranspose(16, 3, activation="relu")(x)
+x = layers.Conv2DTranspose(32, 3, activation="relu")(x)
+x = layers.UpSampling2D(3)(x)
+x = layers.Conv2DTranspose(16, 3, activation="relu")(x)
+decoder_output = layers.Conv2DTranspose(1, 3, activation="relu")(x)
+
+#Autoencoder full
+autoencoder = keras.Model(encoder_input, decoder_output, name="autoencoder")
+autoencoder.summary()
+
+'''
+As you can see, the model can be nested: a model can contain sub-models (since a model is just like a layer).
+A common use case for model nesting is ensembling.
+For example, here's how to ensemble a set of models into a single model that averages their predictions:
+'''
+
+def get_model():
+    inputs=keras.Input(shape=(28,28,1))
+    outputs=layers.Dense(1)(inputs)
+    return keras.Model(inputs=inputs,outputs=outputs)
+
+model1=get_model()
+model2=get_model()
+model3=get_model()
+
+inputs=keras.Input(shape=(28,28,1))
+y1=model1(inputs)
+y2=model2(inputs)
+y3=model3(inputs)
+
+outputs=layers.average([y1,y2,y3])
+ensemble_model = keras.Model(inputs,outputs)
+
+
+#Multiple inputs and the Multiple outputs
+num_tags = 12  # Number of unique issue tags
+num_words = 10000  # Size of vocabulary obtained when preprocessing text data
+num_departments = 4  # Number of departments for predictions
+
+title_input = keras.Input(
+    shape=(None,), name="title"
+)  # Variable-length sequence of ints
+body_input = keras.Input(shape=(None,), name="body")  # Variable-length sequence of ints
+tags_input = keras.Input(
+    shape=(num_tags,), name="tags"
+)  # Binary vectors of size `num_tags`
+
+# Embed each word in the title into a 64-dimensional vector
+title_features = layers.Embedding(num_words, 64)(title_input)
+# Embed each word in the text into a 64-dimensional vector
+body_features = layers.Embedding(num_words, 64)(body_input)
+
+# Reduce sequence of embedded words in the title into a single 128-dimensional vector
+title_features = layers.LSTM(128)(title_features)
+# Reduce sequence of embedded words in the body into a single 32-dimensional vector
+body_features = layers.LSTM(32)(body_features)
+
+# Merge all available features into a single large vector via concatenation
+x = layers.concatenate([title_features, body_features, tags_input])
+
+# Stick a logistic regression for priority prediction on top of the features
+priority_pred = layers.Dense(1, name="priority")(x)
+# Stick a department classifier on top of the features
+department_pred = layers.Dense(num_departments, name="department")(x)
+
+# Instantiate an end-to-end model predicting both priority and department
+model = keras.Model(
+    inputs=[title_input, body_input, tags_input],
+    outputs=[priority_pred, department_pred],
+)
+
+
+#Plotting this model gives you the immense pleasure to see what is there with you
+keras.utils.plot_model(model,"plot_multiple_input_multiple_output",show_shapes=True)
+
+
+#We can have the weighted loss for different outputs
+#this is very important and   required to be done 
+'''
+When compiling this model, you can assign different losses to each output.You can even assign
+different weights to each loss -- to modulate their contribution to the total training loss.
+'''
+
+
+# a toy resnet model for seeing how to build the skip connections
+# And leverage the power of the functional API
+
+inputs=keras.Input(shape=(32,32,3), name="img")
+x=layers.Conv2D(32,3,activation="relu")(inputs)
+x=layers.Conv2D(64,3,activation="relu")(inputs)
+block_1_output=layers.MaxPooling2D(3)(x)
+
+
+#Very nice code just see
+x = layers.Conv2D(64, 3, activation="relu", padding="same")(block_1_output)
+x = layers.Conv2D(64, 3, activation="relu", padding="same")(x)
+block_2_output = layers.add([x, block_1_output])
+
+
+x = layers.Conv2D(64, 3, activation="relu", padding="same")(block_2_output)
+x = layers.Conv2D(64, 3, activation="relu", padding="same")(x)
+block_3_output = layers.add([x, block_2_output])
+
+x = layers.Conv2D(64, 3, activation="relu")(block_3_output)
+x = layers.GlobalAveragePooling2D()(x)
+x = layers.Dense(256, activation="relu")(x)
+x = layers.Dropout(0.5)(x)
+outputs = layers.Dense(10)(x)
+
+model = keras.Model(inputs, outputs, name="toy_resnet")
+model.summary()
+
+model.save("toy_resnet")
+
+keras.utils.plot_model(model,"toy_resnet_model.png",show_shapes=True)
+
+
+
+#training the model is as easy as possible dont worry
+(x_train,y_train),(x_test,y_test)=keras.datasets.cifar10.load_data()
+
+x_train=x_train.astype("float32")/255.0
+x_test=x_test.astype("float32")/255.0
+y_train=y_train.utils.to_categorical(y_train,10)
+y_test=y_test.utils.to_categorical(y_test,10)
+
+#using the categorical cross_entropy
+model.compile(
+    optimizer=keras.optimizers.RMSprop(1e-3),
+    loss=keras.losses.CategoricalCrossentropy(from_logits=True),
+    metrics=["acc"],
+)
+# We restrict the data to the first 1000 samples so as to limit execution time
+# on Colab. Try to train on the entire dataset until convergence!
+model.fit(x_train[:1000], y_train[:1000], batch_size=64, epochs=1, validation_split=0.2)
+
+
+# Shareable layers which are really very important if needed
+shared_embedding=layers.Embedding(1028,128)
+# Variable-length sequence of integers
+text_input_a = keras.Input(shape=(None,), dtype="int32")
+
+# Variable-length sequence of integers
+text_input_b = keras.Input(shape=(None,), dtype="int32")
+
+# Reuse the same layer to encode both inputs
+encoded_input_a = shared_embedding(text_input_a)
+encoded_input_b = shared_embedding(text_input_b)
+
+
+
+
+
+#Using the vgg model and the nodes of dag that is the layers in between
+vgg19 = tf.keras.applications.VGG19()
+
+feature_list=[layer.output for layer in vgg19.layers]
+
+#using this feature list we are creating another model that gives us intermediate activations
+feat_extraction_model = keras.Model(inputs=vgg19.input, outputs=feature_list)
+
+img = np.random.random((1, 224, 224, 3)).astype("float32")
+extracted_features = feat_extraction_model(img)
+
+
+
+
+
+# Reserve 10,000 samples for validation sets in the keras for training a neural network
+x_val = x_train[-10000:]
+y_val = y_train[-10000:]
+x_train = x_train[:-10000]
+y_train = y_train[:-10000]
+
+#compiling the model with the RMSprop and the SparseCategoricalCrossentropy,SparseCategoricalAccuracy
+model.compile(
+    optimizer=keras.optimizers.RMSprop(),  # Optimizer
+    # Loss function to minimize
+    loss=keras.losses.SparseCategoricalCrossentropy(),
+    # List of metrics to monitor
+    metrics=[keras.metrics.SparseCategoricalAccuracy()],
+)   
+
+#fitting the data
+print("Fit model on training data")
+history = model.fit(
+    x_train,
+    y_train,
+    batch_size=64,
+    epochs=2,
+    # We pass some validation for
+    # monitoring validation loss and metrics
+    # at the end of each epoch
+    validation_data=(x_val, y_val),
+)
+
+
+#the returned history objects holds a record of the loss values and metric values during training
+history.history
+
+#evaluate the results
+# Evaluate the model on the test data using `evaluate`
+print("Evaluate on test data")
+results = model.evaluate(x_test, y_test, batch_size=128)
+print("test loss, test acc:", results)
+
+
+
+#Remember metrics should always be a list so keep it in mind and we need this 
+#when we use the multiple inputs and the multiple outputs model
+def get_uncompiled_model():
+    inputs = keras.Input(shape=(784,), name="digits")
+    x = layers.Dense(64, activation="relu", name="dense_1")(inputs)
+    x = layers.Dense(64, activation="relu", name="dense_2")(x)
+    outputs = layers.Dense(10, activation="softmax", name="predictions")(x)
+    model = keras.Model(inputs=inputs, outputs=outputs)
+    return model
+
+
+def get_compiled_model():
+    model = get_uncompiled_model()
+    model.compile(
+        optimizer="rmsprop",
+        loss="sparse_categorical_crossentropy",
+        metrics=["sparse_categorical_accuracy"],
+    )
+    return model
+
+
+
+'''
+Optimizers Available:
+SGD
+Adam
+RMSprop
+'''
+
+'''
+Losses Available:
+MeanSquaredError()
+KlDivergence()
+CosineSimilarity()
+etc
+'''
+
+'''
+Metrics:
+AUC 
+Precision()
+Recall()
+'''
+
+def custom_mean_squared_error(y_true, y_pred):
+    return tf.math.reduce_mean(tf.square(y_true - y_pred))
+
+
+model = get_uncompiled_model()
+model.compile(optimizer=keras.optimizers.Adam(), loss=custom_mean_squared_error)
+
+# We need to one-hot encode the labels to use MSE
+y_train_one_hot = tf.one_hot(y_train, depth=10)
+model.fit(x_train, y_train_one_hot, batch_size=64, epochs=1)
+
+
+
+#loss function with some other paramters as well you have to define a class
+#that is a custommse if you want to make you have to define the ___init__ function and the call function
+#if you want to use more than one parameter..........
+class CustomMSE(keras.losses.Loss):
+    def __init__(self, regularization_factor=0.1, name="custom_mse"):
+        super().__init__(name=name)
+        self.regularization_factor = regularization_factor
+
+    def call(self, y_true, y_pred):
+        mse = tf.math.reduce_mean(tf.square(y_true - y_pred))
+        reg = tf.math.reduce_mean(tf.square(0.5 - y_pred))
+        return mse + reg * self.regularization_factor
+
+
+model = get_uncompiled_model()
+#compiling with the custommse
+model.compile(optimizer=keras.optimizers.Adam(), loss=CustomMSE())
+
+y_train_one_hot = tf.one_hot(y_train, depth=10)
+model.fit(x_train, y_train_one_hot, batch_size=64, epochs=1)
+
+
+
+
+#Building a custome metrics that is really very important 
+class CategoricalTruePositives(keras.metrics.Metric):
+    def __init__(self, name="categorical_true_positives", **kwargs):
+        super(CategoricalTruePositives, self).__init__(name=name, **kwargs)
+        self.true_positives = self.add_weight(name="ctp", initializer="zeros")
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        y_pred = tf.reshape(tf.argmax(y_pred, axis=1), shape=(-1, 1))
+        values = tf.cast(y_true, "int32") == tf.cast(y_pred, "int32")
+        values = tf.cast(values, "float32")
+        if sample_weight is not None:
+            sample_weight = tf.cast(sample_weight, "float32")
+            values = tf.multiply(values, sample_weight)
+        self.true_positives.assign_add(tf.reduce_sum(values))
+
+    def result(self):
+        return self.true_positives
+
+    def reset_states(self):
+        # The state of the metric will be reset at the start of each epoch.
+        self.true_positives.assign(0.0)
+
+
+model = get_uncompiled_model()
+model.compile(
+    optimizer=keras.optimizers.RMSprop(learning_rate=1e-3),
+    loss=keras.losses.SparseCategoricalCrossentropy(),
+    metrics=[CategoricalTruePositives()],
+)
+model.fit(x_train, y_train, batch_size=64, epochs=3)
+
+
+
+#Adding the ActivityRegularizer
+class ActivityRegularizationLayer(layers.Layer):
+    def call(self, inputs):
+        self.add_loss(tf.reduce_sum(inputs) * 0.1)
+        return inputs  # Pass-through layer.
+
+
+inputs = keras.Input(shape=(784,), name="digits")
+x = layers.Dense(64, activation="relu", name="dense_1")(inputs)
+
+# Insert activity regularization as a layer
+x = ActivityRegularizationLayer()(x)
+
+x = layers.Dense(64, activation="relu", name="dense_2")(x)
+outputs = layers.Dense(10, name="predictions")(x)
+
+model = keras.Model(inputs=inputs, outputs=outputs)
+model.compile(
+    optimizer=keras.optimizers.RMSprop(learning_rate=1e-3),
+    loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+)
+
+# The displayed loss will be much higher than before
+# due to the regularization component.
+model.fit(x_train, y_train, batch_size=64, epochs=1)
+
+
+
+
+#Adding the MetricLogging Layer
+class MetricLoggingLayer(layers.Layer):
+    def call(self, inputs):
+        # The `aggregation` argument defines
+        # how to aggregate the per-batch values
+        # over each epoch:
+        # in this case we simply average them.
+        self.add_metric(
+            keras.backend.std(inputs), name="std_of_activation", aggregation="mean"
+        )
+        return inputs  # Pass-through layer.
+
+
+inputs = keras.Input(shape=(784,), name="digits")
+x = layers.Dense(64, activation="relu", name="dense_1")(inputs)
+
+# Insert std logging as a layer.
+x = MetricLoggingLayer()(x)
+
+x = layers.Dense(64, activation="relu", name="dense_2")(x)
+outputs = layers.Dense(10, name="predictions")(x)
+
+model = keras.Model(inputs=inputs, outputs=outputs)
+model.compile(
+    optimizer=keras.optimizers.RMSprop(learning_rate=1e-3),
+    loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+)
+model.fit(x_train, y_train, batch_size=64, epochs=1)
+
+
+
+
+#when you add the loss using the add_loss and the metric using the add_metric
+#then you do not have to add the loss and metric when you are compiling the model
+
+class LogisticEndpoint(keras.layers.Layer):
+    def __init__(self, name=None):
+        super(LogisticEndpoint, self).__init__(name=name)
+        self.loss_fn = keras.losses.BinaryCrossentropy(from_logits=True)
+        self.accuracy_fn = keras.metrics.BinaryAccuracy()
+
+    def call(self, targets, logits, sample_weights=None):
+        # Compute the training-time loss value and add it
+        # to the layer using `self.add_loss()`.
+        loss = self.loss_fn(targets, logits, sample_weights)
+        self.add_loss(loss)
+
+        # Log accuracy as a metric and add it
+        # to the layer using `self.add_metric()`.
+        acc = self.accuracy_fn(targets, logits, sample_weights)
+        self.add_metric(acc, name="accuracy")
+
+        # Return the inference-time prediction tensor (for `.predict()`).
+        return tf.nn.softmax(logits)
+
+
+  
