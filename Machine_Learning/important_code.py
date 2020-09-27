@@ -1373,4 +1373,46 @@ class LogisticEndpoint(keras.layers.Layer):
         return tf.nn.softmax(logits)
 
 
-  
+
+
+#declaring the variable
+var=tf.Variable([3,3])
+
+#Detecting the GPU
+var = tf.Variable([3, 3])
+
+if tf.test.is_gpu_available():
+    print('Running on GPU')
+    print('GPU #0?')
+    print(var.device.endswith('GPU:0'))
+else:
+    print('Running on CPU')
+    
+#Eager execution is by default in the tesorflow      
+
+
+
+#Ragged Tensor
+#nothing but the variable size inputs
+ragged =tf.ragged.constant([[5, 2, 6, 1], [], [4, 10, 7], [8], [6,7]])
+
+print(ragged)
+print(ragged[0,:])
+print(ragged[1,:])
+print(ragged[2,:])
+print(ragged[3,:])
+print(ragged[4,:])
+
+
+#the Ragged tensor and the split values
+print(tf.RaggedTensor.from_row_splits(values=[5, 2, 6, 1, 4, 10, 7, 8, 6, 7],row_splits=[0, 4, 4, 7, 8, 10]))
+
+
+#tensorflow function
+x = [1,3,5,7,11]
+y = 5
+s = tf.math.squared_difference( x,  y) #() x-y)*(x-y) with broadcasting
+s
+
+
+
